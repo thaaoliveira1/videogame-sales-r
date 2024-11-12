@@ -1,0 +1,1932 @@
+---
+title: 'Report: Video Games Sales Dataset'
+output:
+  word_document: default
+  html_notebook: default
+  pdf_document: default
+---
+
+# DATA DESCRIPTION
+
+
+The dataset chosen for this analysis was taken directly from the Kaggle website (https://www.kaggle.com/) and was generated from a scrap from http://www.vgchartz.com/. The database contains a list of video games with sales of over 100,000 copies put in a ranking of historical sales until the year of 2016.
+
+### Fields include
+
+
+**Name** - The games name
+
+**Platform** - Platform of the games release (i.e. PC,PS4, etc.)
+
+**Year** - Year of the game's release
+
+**Genre** - Genre of the game
+
+**Publisher** - Publisher of the game
+
+**NA_Sales** - Sales in North America (in millions)
+
+**EU_Sales** - Sales in Europe (in millions)
+
+**JP_Sales** - Sales in Japan (in millions)
+
+**Other_Sales** - Sales in the rest of the world (in millions)
+
+**Global_Sales** - Total worldwide sales.
+
+
+
+## Overall Dataset
+
+The original dataset contains 16.598 observations, but I will import it with only the first 200 top ranking observations to optimize our analysis.
+
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+vg_sales <- read_excel("vg_sales.xlt", 
+    col_types = c("numeric", "text", "text", 
+        "numeric", "text", "text", "numeric", 
+        "numeric", "numeric", "numeric", 
+        "numeric"), n_max = 200)
+```
+```{r}
+str(vg_sales)
+```
+
+
+When importing the data, the dataset contained 7 numeric variables, 4 categorical variables and 200 observations. The first step is to transform the *Rank* column into row names:
+
+```{r message=FALSE, warning=FALSE}
+for (i in 1:nrow(vg_sales)){
+  rownames(vg_sales)[i]<- vg_sales[i,1]
+}
+
+vg_sales <- vg_sales[,-1]
+```
+
+Then we have to change the variables *Platform*, *Genre* and *Publisher* into factors:
+
+```{r}
+vg_sales$Platform = factor(vg_sales$Platform)
+vg_sales$Genre = factor(vg_sales$Genre)
+vg_sales$Publisher = factor(vg_sales$Publisher)
+
+```
+
+Then we have to check if we have any NA values.
+
+```{r}
+any(is.na(vg_sales))
+```
+As we checked, the data set doesn’t have any NA values and with this we have 7 numerical variables, 4 categorical variables and 3 of it structured as factors.
+
+```{r}
+str(vg_sales)
+```
+Therefore we have a final *vg_sale* dataset of 200 observations and 10 variables, where each row represents a ranking place on Video Games sales all over the world and this will be the dataset we will use on this analysis. Check the details below:
+
+```{r}
+vg_sales
+```
+Now that we optimized and arranged the datas, we can start the analysis.
+
+
+# UNIVARIATE ANALYSIS
+
+First of all, lets analyze every single one of the variables, to describe the data and maybe find patterns with it.
+
+
+## Name
+
+*Name* is a categorical variable, so in this case we can only visualize its lenght, class and mode.
+
+```{r}
+summary(vg_sales$Name)
+```
+
+## Platform
+
+*Platform* is a factor, so we can check how many levels it has and as we can see below it has 21 levels, or we can say that we have 21 different platforms in the first 200 video games in the rank. The platform X360 and PS3 has equally 28 video games represented in this dataset.
+
+
+```{r}
+summary(vg_sales$Platform)
+```
+
+
+```{r}
+levels(vg_sales$Platform)
+```
+
+
+
+## Year
+
+*Year* is a discrete random variable, so we can draw a histogram to visualize better the frequencies of years in this dataset. As we can see below, in the years of 2010 and 2011 we had more video games in the top 200 rank of sales. Another thing interesting in this is that we can see that we dont have any video games of the years 1986 and 1990 into this dataset.
+
+```{r}
+summary(vg_sales$Year)
+```                                 
+
+```{r}
+hist(vg_sales$Year, breaks = 30)
+```
+
+
+
+
+## Genre
+
+As well as *Platform*, *Genre* is also a factor, with that we can check how many levels this factor has and as we can see below, there are 12 levels in the *Genre* factor, so we can assume that this dataset has 12 types of video game genres in the Top 200 rank of sales. And the genre Action followed by Shooter are the ones that appears the most in that rank. 
+
+```{r}
+summary(vg_sales$Genre)
+```
+
+```{r}
+levels(vg_sales$Genre)
+```
+
+In this case, *Genre* doesn't have as many levels as *Platform* so we can draw a pie graph to help us to visualize better the distribuition of genres in the top rank:
+
+```{r}
+library(ggplot2)
+ggplot(subset(vg_sales), aes(y="", fill=Genre)) +
+geom_bar(aes(x=..count../sum(..count..))) +
+scale_x_continuous(labels=scales::percent) +
+ylab('Percentage') +
+xlab('Genre') +
+coord_polar()
+```
+
+
+## Publisher
+
+*Publisher* is also a factor, and in this case with 23 levels. The publisher with more video games represented into this dataset is *Nintendo* with 80 units, almost the half of all observations.
+
+```{r}
+summary(vg_sales$Publisher)
+```
+
+
+```{r}
+levels(vg_sales$Publisher)
+```
+
+In this case I didnt draw a pie graph cause it has many levels and the visualization would be not so clarifying.
+
+
+## NA_Sales
+
+*NA_Sales* is a continuous variable that represents the video games sales (in milions) in North America. We can check some values from this sample using the summary function. 
+
+We can see that the mean of sales in North America is 4.892 millions, the maximun value is 41.49 milions and the minimun value is 0.070 milions. Other values that we have with this function are the 1st and 3rd quartil and the median, as you can see below:
+
+```{r}
+summary(vg_sales$NA_Sales)
+```
+
+Since *NA_Sales* is a continuous variable, we will use a boxplot view, which is a graphical and compact way to analyze a variable.
+
+```{r}
+library(ggplot2)
+boxplot(vg_sales$NA_Sales, main="NA_Sales", col="blue")
+```
+In the boxplot we can see some graphical representation of the values we have seen before in the summary like:
+
+> • The bottom segment of the box represents the first quartile and how we have checked before, is 2.638 milions;
+
+> • The segment in the middle of the box represents the median value (second quartile) that is 3.565 milions;
+
+> • The top segment of the box represents the third quartile that is 5.628 milions;
+
+> • The bottom whisker indicates the minimun value of the sample (with no outliers) that is we can see that is close to 0;
+
+> • The top whisker indicates the maximun value of the sample (with no outliers) and we can check that is close to 10;
+
+> • The dots represent the values of the sample which are behind the limits defined by the whiskers. These are usually referred to as outliers and considered as abnormal values in the sample and in this case goes to 10 milion until more than 40 milions sales.
+
+
+Now we can look for the model that fits best for the distribution:
+
+```{r}
+library(gamlss)
+fit.EXP <- histDist(vg_sales$NA_Sales, family=EXP, nbins = 30, main="Exponential distribution")
+```
+
+```{r}
+fit.GA <- histDist(vg_sales$NA_Sales, family=GA, nbins=30, main = "Gamma Distribution")
+```
+
+
+```{r}
+fit.IG <- histDist(vg_sales$NA_Sales, family=IG, nbins=30, main = "Inverse Gamma Distribution")
+```
+
+
+```{r}
+fit.LOGNO <- histDist(vg_sales$NA_Sales, family=LOGNO, nbins=30, main = "LogNormal Distribution")
+```
+
+
+```{r}
+fit.WEI <- histDist(vg_sales$NA_Sales,family=WEI, nbins=30, main = "Weibull Distribution")
+```
+
+```{r}
+data.frame(row.names = c("Exponential", "Gamma", "Inverse Gaussian", "Log-Normal", "Weibull"),
+AIC=c(AIC(fit.EXP), AIC(fit.GA), AIC(fit.IG), AIC(fit.LOGNO), AIC(fit.WEI)),
+SBC=c(fit.EXP$sbc, fit.GA$sbc, fit.IG$sbc, fit.LOGNO$sbc, fit.WEI$sbc))
+
+```
+
+
+According to the Akaike's information criterion and Bayesian one, the best model for this distribuition would be the *log-normal*, since its the lower values.
+
+
+
+
+## EU_Sales
+
+*EU_Sales* is also a continuous variable that represents all the sales of video games in Europe of this top 200 rank. 
+
+Again we will check some values of the sample using the summary function, and we already have some interesting notations like: there is some video game that didnt have any sale in Europe, since the minimun value found in the database is 0.00. Other thing we can look carefully is the maximun value of sales that is 29.020 milions and its too much below than the maximun value found in the North America sales (41.490 milions).
+
+
+
+```{r}
+summary(vg_sales$EU_Sales)
+```
+
+Just as we did with *NA_Sales*, we can also use a Boxplot to describe graphically the values of *EU_Sales*:
+
+```{r}
+library(ggplot2)
+boxplot(vg_sales$EU_Sales, main="EU_Sales", col="#7FFFD4")
+```
+
+> • The bottom segment of the box (the 1st quartil) is 1.705 milions;
+
+> • The segment in the middle of the box represents the median value and is 2.300 milions;
+
+> • The top segment of the box represents the third quartile and is 3.522 milions;
+
+> • The bottom whisker indicates the minimun value of the sample (with no outliers) that is we can see that is close to 0;
+
+> • The top whisker indicates the maximun value of the sample (with no outliers) and we can check that is close to 5 milions;
+
+> •  The sales between nearly 6 milions and 30 milions are all outliers. 
+
+
+Now we can look for the model that fits best for the distribution:
+
+```{r}
+library(gamlss)
+fit.EXP1 <- histDist(vg_sales$EU_Sales, family=EXP, nbins = 30, main="Exponential distribution")
+```
+
+
+Since the *EU_Sales* has values equal to zero, because some video games didn't sell in Europe, I could only do the exponencial distribuition and its the only one suited for this type of cases.
+
+
+
+
+## JP_Sales
+
+*JP_Sales* follows the same description as the others and is also a continuous variable, but this time representing the sales of a single country, Japan. 
+
+One more time we are going to use the summary function to check the main values of this variable in the database. And as we can check below, in the same way that happened with *EU_Sales* we have a minimum value of sales that is 0.00, that means we have a video game (or more than one) that didn't have considerable sales in Japan. Other curiosity we can have from it is that the maximum value of sales is 10.22 milions, and it is even below to the Europe Sales maximum values that was already low (when compared to the sales in North America).
+
+```{r}
+summary(vg_sales$JP_Sales)
+```
+
+We can also use a Boxplot graph to describe it better:
+
+```{r}
+library(ggplot2)
+boxplot(vg_sales$JP_Sales, main="JP_Sales", col="red")
+```
+
+> • The bottom segment of the box (the 1st quartil) is 0.1075 milions;
+
+> • The the median value is 0.8300 milions;
+
+> • The top segment of the box represents the third quartile and is 2.14 milions;
+
+> • The bottom whisker indicates the minimun value of the sample (with no outliers) that is we can see that is close to 0;
+
+> • The top whisker indicates the maximun value of the sample (with no outliers) and we can check that is close to 5 milions;
+
+> • In this case we can see clearly that we have about to 7 outliers that are the sales in the range of nearly 5 milions until 10 milions.
+
+
+Now we can look for the model that fits best for the distribution:
+
+```{r}
+library(gamlss)
+fit.EXP2 <- histDist(vg_sales$JP_Sales, family=EXP, nbins = 30, main="Exponential distribution")
+```
+
+
+Since the *JP_Sales* has values equal to zero, because some video games didn't sell in Japan, I could only do the exponencial distribuition and its the only one suited for this type of cases.
+
+
+
+## Other_Sales
+
+The *Other_Sales* variable represents the sales in the rest of the world of these video games in the top 200 rank. As we can see, the values are very close to the Japan sales, and its below Europe sales and North America sales. Some video games didn't have a sale in the rest of the world (or it was not considerable), the maximun sale of a video game is 10.57 milions and the mean of sale in the rest of the world was 0.93 milions.
+
+```{r}
+summary(vg_sales$Other_Sales)
+```
+Lets use a boxplot to describe it better:
+
+```{r}
+library(ggplot2)
+boxplot(vg_sales$Other_Sales, main="Other_Sales", col="#FFD700")
+```
+
+
+> • The bottom segment of the box (the 1st quartil) is 0.33 milions;
+
+> • The the median value is 0.68 milions;
+
+> • The top segment of the box represents the third quartile and is 1.075 milions;
+
+> • The bottom whisker indicates the minimun value of the sample (with no outliers) that is we can see that is close to 0;
+
+> • The top whisker indicates the maximun value of the sample (with no outliers) and we can check that is close to 2 milions;
+
+> • The outliers are in the range of 3 milions until more than 10 milions of sales.
+
+
+Now we can look for the model that fits best for the distribution:
+
+```{r}
+library(gamlss)
+fit.EXP3 <- histDist(vg_sales$JP_Sales, family=EXP, nbins = 30, main="Exponential distribution")
+```
+
+*Other_Sales* also has values equal to zero, because some video games didn't sell in other places, I could only do the exponencial distribuition and its the only one suited for this type of cases.
+
+
+
+
+## Global_Sales
+
+The *Global_Sales* variable is the sum of all the variables mentioned and represents the total sale of each video game worldwide, so as we can presume it has the largest numbers in all statistical representations.
+
+When we use the summary function, its possible to see that the minimun sale of a video game is 5.08 milions and the maximun is 82.740 milions, and it both represents the sales of the last one in the rank and the first one in the rank, since our database is ordered by the Global Sales. 
+
+```{r}
+summary(vg_sales$Global_Sales)
+```
+
+```{r}
+library(ggplot2)
+boxplot(vg_sales$Global_Sales, main="Global_Sales", col="#D8BFD8")
+```
+
+> • The bottom segment of the box (the 1st quartil) is 5.83 milions;
+
+> • The the median value is 7.32 milions;
+
+> • The top segment of the box represents the third quartile and is 11.217 milions;
+
+> • The bottom whisker indicates the minimun value of the sample (with no outliers) that it must be close to 5 milions.
+
+> • The top whisker indicates the maximun value of the sample (with no outliers) and we can check that it must be close to 18 milions.
+
+> • As we can see, in this case we have the largest range of outliers, that goes since 20 milions until more than 80 milions sales. 
+
+
+Now we can look for the model that fits best for the distribution:
+
+```{r}
+library(gamlss)
+fit.EXP4 <- histDist(vg_sales$Global_Sales, family=EXP, nbins = 30, main="Exponential distribution")
+```
+
+```{r}
+fit.GA4 <- histDist(vg_sales$Global_Sales, family=GA, nbins=30, main = "Gamma Distribution")
+```
+
+
+```{r}
+fit.IG4 <- histDist(vg_sales$Global_Sales, family=IG, nbins=30, main = "Inverse Gamma Distribution")
+```
+
+
+```{r}
+fit.LOGNO4 <- histDist(vg_sales$Global_Sales, family=LOGNO, nbins=30, main = "LogNormal Distribution")
+```
+
+
+```{r}
+fit.WEI4 <- histDist(vg_sales$Global_Sales,family=WEI, nbins=30, main = "Weibull Distribution")
+```
+```{r}
+data.frame(row.names = c("Exponential", "Gamma", "Inverse Gaussian", "Log-Normal", "Weibull"),
+AIC=c(AIC(fit.EXP4), AIC(fit.GA4), AIC(fit.IG4), AIC(fit.LOGNO4), AIC(fit.WEI4)),
+SBC=c(fit.EXP4$sbc, fit.GA4$sbc, fit.IG4$sbc, fit.LOGNO4$sbc, fit.WEI4$sbc))
+
+```
+
+According to the Akaike's information criterion and Bayesian one, the best model for this distribuition would be the *log-normal*.
+
+
+
+
+
+# MULTIVARIATE ANALYSIS: PRINCIPAL COMPONENT ANALYSIS
+
+Principal Component Analysis or PCA is a multivariate analysis technique that can be used to analyze interrelationships between a large number of variables and explain these variables in terms of their inherent dimensions (Components).
+
+The goal is to find a way to condense the information contained in several original variables into a smaller set of statistical variables (components) with a minimal loss of information.
+
+The number of main components becomes the number of variables considered in the analysis, but generally the first components are the most important since they explain most of the total variation.
+
+The main components are usually extracted via the covariance matrix, but they can also be extracted via the correlation matrix.
+
+
+
+First of all we cannot use PCA to analyze categorical variables, so we will delete these columns from this and analyze only the numerical variables. 
+
+I will change the variable *Name* into row names to have a more clear view of graphs and correlation, but before doing tht I realized that many video games have the same name and its only difference were the platform, so I will bring into like a rowname doing a combination of *Name* with *Platform* to have a unique value. I also decided to delete the variable *Year* and working only with the sales. We can see all this work below:
+
+```{r}
+vg_sales.pca <- vg_sales[1:200, 6:10]
+```
+
+```{r message=FALSE, warning=FALSE}
+for (i in 1:nrow(vg_sales)){
+  rownames(vg_sales.pca)[i]<- paste(vg_sales[i,1], levels(vg_sales$Platform)[as.numeric(vg_sales[i,2])], sep = " - ") 
+}
+
+```
+
+```{r}
+head(vg_sales.pca)
+```
+
+
+Now lets check the variance of each variable to see how far each value is from the central (average) value.
+
+```{r}
+apply (vg_sales.pca, 2, var)
+```
+
+Now lets standardize these values before aplying PCA because of the high differences between the variables, and if we dont standardize the PCA can be influenced by outliers.
+
+```{r}
+scaled_vg_sales.pca <- apply(vg_sales.pca, 2, scale)
+head(scaled_vg_sales.pca)
+```
+
+To calculate the Principal Component, we will use the *cov()* function to calculate the covariance matrix and then use the *eigen()* function to calculate the eigenvectors and eigenvalues.
+
+The *eigen* function results in an object containing the ordered eigenvalues and the corresponding eigenvectors of the matrix.
+
+```{r}
+std_sales.cov <- cov(scaled_vg_sales.pca) 
+sales_eigen <- eigen(std_sales.cov)
+str(sales_eigen)
+```
+Just as an example, we take the first two sets of loadings and store them in the matrix called eg.
+
+```{r}
+(eg <- sales_eigen$vectors[,1:2])
+```
+
+Now we are going to place the points of eigenvectors in a positive direction to have a more logical interpretation of the graphs. The set of loadings for the first principal component (PC1) and second principal component (PC2) are shown below:
+
+```{r}
+eg <- -eg
+row.names(eg) <- c("NA_Sales", "EU_Sales", "JP_Sales", "Other_Sales", "Global_Sales")
+colnames(eg) <- c("PC1", "PC2")
+eg
+```
+
+Now lets project *n* datapoints into the first eigenvector, the projected values are the principal component scores of each observation:
+
+```{r}
+PC1 <- scaled_vg_sales.pca %*%  eg[,1]
+PC2 <- scaled_vg_sales.pca %*%  eg[,2]
+
+PC <- data.frame(Video_Games = row.names(vg_sales.pca), PC1, PC2)
+head(PC, digits = 3)
+```
+
+
+We've calculated the 1st and 2nd principal component of each video game, and now we can plot a two dimensional view of the data:
+
+```{r}
+library(ggplot2)
+library(modelr)
+ggplot(PC, aes(PC1, PC2)) +
+modelr::geom_ref_line(h = 0) +
+modelr::geom_ref_line(v = 0) +
+geom_text(aes(label = Video_Games), size = 3) +
+xlab("First Principal Component") +
+ylab("Second Principal Component") +
+ggtitle("Scores-1PC and 2PC")
+```
+
+The first principal component (x-axis) seems to correspond to the sales of North America, Europe and the Global, which are the higher sales.
+
+The second component (y-axis) is strongly represented by Japan and Other sales. 
+
+We can also see that the majority of video games are close to the origin, which means they are close to average in both categories.
+
+And in these graphs we can also notice 3 or 4 outliers in the group.
+
+```{r}
+set.seed(123)
+res.pca <- prcomp(scaled_vg_sales.pca, center = TRUE, scale. = FALSE)
+biplot(res.pca, cex.axis = 0.5, scale=1)
+abline(h=0)
+abline(v=0)
+```
+
+In the graph above the angle between the arrows give us information about the correlation of two variables. Based on the concepts below:
+
+> - angle close to 0 → correlation close to 1.
+> - angle close to 90◦ → correlation close to 0.
+> - angle close to 180◦ → correlation close to -1.
+
+In this case the angles between *Global_Sales* and *NA_Sales* is almost zero, we can see that because they overlap each other, it means that the correlation is close to 1, which means they are highly correlated. 
+
+In this case we also notice that the video game the occupies the first place in the rank is a big outlier in the plot.
+
+
+## (Cumulative) Proportion of variance explained
+
+PCA reduces the dimensionality while explaining most of the variability, but there is a more technical method for measuring exactly what percentage of the variance was retained in these principal components.
+
+```{r}
+PVE <- sales_eigen$values/sum(sales_eigen$values)
+round(PVE,3)
+```
+
+> - The first principal component explains 63,8% of the variability;
+> - The second principal component explains 19,5% of the variability;
+> - The first and second component together explains 83,3% of the variability.
+
+According to this approach, the first principal components that explain at least 80% of the total variance are retained. In this case the first principal component plus the second principal component explains 83,3%, so they must be retained.
+
+
+## Kaiser Rule
+
+You can use the eigenvalue size to determine the number of major components. Retain the main components with the largest eigenvalues. For example, using the *Kaiser* rule, you use only the main components with eigenvalues that are greater than 1.
+
+```{r}
+round(sales_eigen$values,3) 
+```
+Based on this, we will use only the first PC.
+
+
+## Scree Plot
+
+To visually compare the size of the eigenvalues, use the scree graph. The scree graph can help you determine the number of components based on the size of the eigenvalues.
+
+```{r}
+PVEplot <- qplot(c(1:5), PVE) + 
+  geom_line()+
+  xlab("Principal Component")+
+  ylab("PVE")+
+  ggtitle ("Scree Plot")+
+  ylim(0,1)
+```
+```{r}
+cumPVE <- qplot(c(1:5), cumsum(PVE)) + 
+  geom_line()+
+  xlab("Principal Component") + 
+  ylab(NULL)+
+  ggtitle("Cumulative Scree Plot") +
+  ylim(0,1)
+```
+```{r}
+library(gridExtra)
+grid.arrange(PVEplot, cumPVE, ncol=2)
+```
+
+To determine the number of components, the scree plot suggest to select the number of PC corresponding to the value of the elbow where the curve becomes flat or the elbow where the PVE significantly drops off.
+
+In this example the result is not so clear just by looking to the graphs, but according to what we may see, its reasonable to mantain the first 2 PC.
+
+
+## Final result of PCA
+
+Based on these different methods we had different results. Based on the cumulative proportion of the variance, we should retain the first 2 principal components. Based on the Kaiser Rule, we should retain only the first PC and based on the scree plot we should retain 2 PCs.
+
+The Scree Plot has the issue to be the most subjective method of analysis, cause sometimes the elbow is not so clear to see. So I decided to use the cumulative proportion of variance explained, cause it will retain more PCs when compared to the Kaiser Rule.
+
+
+
+
+# Cluster Analysis
+
+Clustering is the automatic grouping of similar instances, an unsupervised classification of data. That is, an algorithm that clusters data classifies them into data sets that ‘resemble’ in some way - regardless of predefined classes. The groups generated by this classification are called clusters.
+
+The difference between clustering and PCA is that the PCA looks to find a low-dimensional representation of the observations that explain a good fraction of the variance while the clustering looks to find homogeneous subgroups among the observations.
+
+In the clustering we are interested in the units of a group (rows of a dataset) and the classification of observations into groups requires some methods for computing the distance or the dissimilarity between each pair of observations. 
+
+The choice of dissimilarity or distance measures is a critical step in clustering. It
+defines how the similarity of two elements is calculated and it will influence the shape of the clusters.
+
+
+To start our clutering analysis, lets first standardize de datas again, first taking out the categorical values one more time:
+
+```{r}
+vg_sales.cl <- vg_sales[1:200, 6:10]
+vg_sales.scaled <- apply(vg_sales.cl, 2, scale)
+head(vg_sales.scaled)
+```
+
+
+## Euclidean Distance
+
+The euclidean distance is a distance measure between a pair of samples *p* and *q* in an n-dimensional feature space. We will subset the first 10 columns and rows and round the result to have a better visualization:
+
+```{r}
+dist.eucl <- dist(vg_sales.scaled, method = "euclidean")
+round(as.matrix(dist.eucl)[1:10, 1:10], 2)
+```
+
+In this symmetric matrix, each value represents the distance between units, each units as a position on the rank. The values on the diagonal represent the distance between units and themselves (which is zero).
+
+But lets compute the euclidean distance for 200 observations, just to save it in a variable for future analysis:
+
+```{r message=FALSE, warning=FALSE}
+dist.eucl.200 <- dist(vg_sales.scaled, method = "euclidean")
+```
+
+
+
+## Manhattan Distance
+
+The Manhattan distance captures the distance between two points by aggregating the pairwise absolute difference between each variable.
+
+```{r}
+dist.man <- dist(vg_sales.scaled, method = "manhattan")
+round(as.matrix(dist.man)[1:10, 1:10], 2)
+```
+
+
+Similar to the euclidean distance matrix, in this case each value represents the distance between units, each units as a position on the rank. The values on the diagonal represent the distance between units and themselves (which is zero).
+
+Now lets compute the manhattan distance for 200 observations and save it in a variable just to save it for future analysis:
+
+```{r message=FALSE, warning=FALSE}
+dist.man.200 <- dist(vg_sales.scaled, method = "manhattan")
+```
+
+
+## Computing Distance for Mixed Data
+
+The original data set contains mixed data (character, factors and numeric) and we have a solution to calculate de distance of mixed data that its to use the gower distance, applying the *daisy()* function that computes de distance of datasets with factors and numerical values. In this case I have to take the *name* column cause it is a character type variable.
+
+```{r}
+library(cluster)
+
+gower.dist <- daisy(vg_sales [,-1])
+round(as.matrix(gower.dist)[1:10,1:10],2)
+```
+Looking at this we can check, for example, that 1(*Wii Sports*) and 10 (*Duck Hunt*) have low similarities while 3 (*Mario Kart Wii*) and 4 (*Wii Sports Resort*) have high similarities. 
+
+
+Now lets do it for the 200 observations and save it into a variable:
+
+```{r message=FALSE, warning=FALSE}
+gower.dist.200 <- daisy(vg_sales [,-1])
+```
+
+
+
+
+## Distance Matrices
+
+We can do the same observations by looking at the graphical visualization of the distance matrix. I will use only 10 observations to have a more clear view:
+
+```{r}
+library(factoextra)
+dist.eucl.1 <- as.matrix(dist.eucl)
+dist.eucl.1 <- dist.eucl.1[1:10,1:10]
+dist.eucl.1 <- dist(dist.eucl.1, method = "euclidean")
+fviz_dist(dist.eucl.1)
+```
+
+The color level is proportional to the value of the dissimilarity between observations. Red indicates high similarity while blue indicates low similarity, in this case based on the euclidean distance. So with that we can say that number 9 (*New Super Mario Bros. Wii*) and number 1 (*Wii Sports*) in this rank have low similarities while 4 (*Wii Sports Resort*) and 3 (*Mario Kart Wii*) have high similarities.
+
+The graph for 200 observations:
+
+```{r}
+library(factoextra)
+dist.eucl.2 <- as.matrix(dist.eucl.200)
+dist.eucl.2 <- dist.eucl.2
+dist.eucl.2 <- dist(dist.eucl.2, method = "euclidean")
+fviz_dist(dist.eucl.2)
+```
+
+
+
+
+
+```{r}
+library(factoextra)
+dist.man.1 <- as.matrix(dist.man)
+dist.man.1 <- dist.man.1[1:10,1:10]
+dist.man.1 <- dist(dist.man.1, method = "manhattan")
+fviz_dist(dist.man.1)
+```
+
+This other graph was built usind the manhattan distance and has the same kind of interpretation, blue means less similarities while red means high similarities. In this case, for example, 8 (*Wii Play*) and 1 (*Wii Sports Resort*) have low similarities, while 8 (*Wii Play*) and 4 (*Wii Sports Resort*) have high similarities.
+
+And the graph for the 200 observations:
+
+```{r}
+library(factoextra)
+dist.man.2 <- as.matrix(dist.man)
+dist.man.2 <- dist.man.2
+dist.man.2 <- dist(dist.man.2, method = "manhattan")
+fviz_dist(dist.man.2)
+```
+
+
+
+
+## Hierarchical Clustering
+
+Hierarchical clustering is a method which seeks to build a hierarchy of clusters and this method do not require the number of clusters *K* as an input. 
+
+Strategies for hierarchical clustering generally fall into two types:
+
+> - Agglomerative -> This is a “bottom-up” approach: each observation starts in its own cluster (leaf), and pairs of clusters are merged as one moves up the hierarchy. This process goes on until there is just one single big cluster (root).
+> - Divisive -> This is a “top-down” approach: all observations start in one cluster (root), and splits are performed recursively as one moves down the hierarchy. This process goes on until all observations are in their own cluster (leaf).
+
+
+### Average Linkage Method and Euclidean Distance
+
+```{r message=FALSE, warning=FALSE}
+library(NbClust)
+res.alm <- NbClust(vg_sales.scaled, distance = "euclidean", min.nc = 2, max.nc = 10,
+method = "average")
+```
+
+```{r}
+fviz_nbclust(res.alm) 
+
+```
+
+According to the majority rule, the best number of clusters is  2 for this method.
+
+
+
+```{r}
+res.hc2 <- hclust(dist.eucl.200, method = "average")
+fviz_dend(res.hc2, cex = 0.5)
+```
+
+Looking at the dendogram the results is a little ambiguos, but we have some way to check if this is a good clustering solution, like check the correlation between the cophenetic distance and the original one.
+
+The closer the value of the correlation coefficient is to 1, the more accurately the clustering solution reflects our data. Values above 0.75 are felt to be good. 
+
+```{r}
+res.hc2 <- hclust(dist.eucl.200, method = "average")
+cor(dist.eucl.200, cophenetic(res.hc2))
+```
+
+The correlation coefficient shows that this clustering solution reflects our data and its a good one to use.
+
+Now, if we want to see clusters, we have to cut the hierarchical tree, for example specifying the
+number of groups that we want.
+
+```{r}
+d.alm <- cutree(res.hc2, k = 2)
+fviz_dend(res.hc2, k = 2, cex = 0.5, k_colors = c("#00AFBB", "#E7B800"), color_labels_by_k = TRUE, rect = TRUE)
+
+```
+```{r}
+table(d.alm)
+```
+As we can see in the dendogram and in the table, the clusterization puts only 1 observation in the first cluster. 
+
+We can visualize these clustering results in the original space, via the matrix of pairwise scatterplots, using the *pairs()* function.
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=d.alm, col=c("#00AFBB", "#E7B800"),  main="Original space\n- Average Linkage Method and Euclidean Distance, K=2"[d.alm])
+```
+
+This is the original matrix of scatterplots, so we are using the original space, which is more important than the one spanned by the first 2 principal components, because we have searched the groups in the original space. 
+
+Looking to this graph we see that in the original space the observations overlap a lot.
+
+
+Using the function fviz *cluster()*, we can also visualize the results in the scatter plot of the first 2 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = d.alm), palette = c("#00AFBB", "#E7B800"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Average Linkage Method and Euclidean Distance, K=2", cex.sub= 0.5)
+```
+
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster =  d.alm),geom="point",ellipse.type="convex",palette = c("#00AFBB", "#E7B800"),repel = TRUE, show.clust.cent = FALSE)
+```
+
+
+### Average Linkage Method and Manhattan Distance
+
+Now lets use the manhattan distance to do the Average Linkage Method:
+
+```{r message=FALSE, warning=FALSE}
+library(NbClust)
+res.alm.md <- NbClust(vg_sales.scaled, distance = "manhattan", min.nc = 2, max.nc = 10,
+method = "average")
+```
+
+```{r}
+fviz_nbclust(res.alm.md) 
+```
+According to the majority rule, the best number of clusters for this method is  2 .
+
+
+```{r}
+res.alm.md1 <- hclust(dist.man.200, method = "average")
+fviz_dend(res.alm.md1, cex = 0.5)
+```
+
+As we can see, one more time the result of the dendogram is ambiguos, so lets check if this is a good clustering solution using the cophenetic distance:
+
+```{r}
+res.cd.alm.md <- hclust(dist.man.200, method = "average")
+cor(dist.man.200, cophenetic(res.cd.alm.md ))
+```
+
+The correlation coefficient of 0.94 shows that this clustering solution reflects our data and its a good one to use.
+
+Now we need to cut the hierarchical tree:
+
+
+```{r}
+alm.md <- cutree(res.cd.alm.md, k = 2)
+fviz_dend(res.cd.alm.md, k = 2, cex = 0.5, k_colors = c("#00AFBB", "#E7B800"), color_labels_by_k = TRUE, rect = TRUE)
+```
+```{r}
+table(alm.md)
+```
+As we can see in the dendogram and in the table, the clusterization puts only 1 observation in the first once again, which means that the partioning is not good.
+
+Now lets visualize the clustering results in the original space:
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=alm.md, col=c("#00AFBB", "#E7B800"),  main="Original space\n- Average Linkage Method and Manhattan Distance, K=2"[alm.md])
+```
+
+Now lets use the function fviz *cluster()*, to visualize the results in the scatter plot of the first 2 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = alm.md), palette = c("#00AFBB", "#E7B800"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Average Linkage Method and Manhattan Distance, K=2", cex.sub= 0.5)
+```
+
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster =  alm.md),geom="point",ellipse.type="convex",palette = c("#00AFBB", "#E7B800"),repel = TRUE, show.clust.cent = FALSE)
+```
+
+
+
+
+The results are pretty much alike with the Euclidean Distance, and even with the cophenetic results with a good coefficient, I don't believe that method give us a good partioning of the datas because we have the 1st cluster with only one observation.
+
+
+
+### Ward's Linkage Method and Euclidean Distance
+
+This approach of calculating the similarity between the clusters is exactly the same as Average except that Ward’s method calculates the sum of the square of the distances.
+
+```{r}
+library(NbClust)
+res.wlm1 <- NbClust(vg_sales.scaled, distance = "euclidean", min.nc = 2, max.nc = 10,
+method = "ward.D2")
+```
+
+```{r}
+fviz_nbclust(res.wlm1) 
+```
+According to the majority rule, the best number of clusters for this method  4 .
+
+
+Let's draw a dendogram to visualize it better:
+
+```{r}
+res.wlm <- hclust(d = dist.eucl.200, method = "ward.D2")
+fviz_dend(res.wlm, cex = 0.5)
+
+```
+
+
+Now, let’s check for the correlation between the cophenetic distance and the original one:
+
+```{r}
+res.coph1 <- cophenetic(res.wlm)
+cor(dist.eucl.200, res.coph1) 
+```
+The value of 0.69 is not low but its now good enough. This means that this clustering method does not
+preserve the true original distances between units, different from the Average Linkage Method.
+
+Now to see clusters, we have to cut the hierarchical tree as well:
+
+```{r}
+d.wlm <- cutree(res.wlm, k = 4)
+fviz_dend(res.wlm, k = 4, cex = 0.5, k_colors = c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233"), color_labels_by_k = TRUE, rect = TRUE)
+```
+
+```{r}
+table(d.wlm)
+```
+In this case we can see a more clear view and we have a better distribution of the clusters, the first cluster has 1 observation, the second one have 24 observations, the third has 173 observations and the fourth has 2.
+
+Now lets check it in the original space:
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=d.wlm, col=c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233"),  main="Original space\n- Ward's Linkage Method and Euclidean Distance, K=4"[d.wlm])
+```
+
+
+Now lets visualize the scatter plott of the 4 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = d.wlm), palette = c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Ward's Linkage Method and Euclidean Distance, K=4", cex.sub= 0.5)
+```
+
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster =  d.wlm),geom="point",ellipse.type="convex",palette = c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233"),repel = TRUE, show.clust.cent = FALSE)
+```
+
+Even with the cophenetic coefficient not good enough, the Ward's Method gave us a better partioning of the clusters (even if with a lot observations in the third cluster) that the Average Linkage Method.
+
+
+### Ward's Linkage Method and the Manhattan Distance
+
+Now lets try the Ward's method using the Manhattan distance:
+
+```{r}
+library(NbClust)
+res.wlm.md <- NbClust(vg_sales.scaled, distance = "manhattan", min.nc = 2, max.nc = 10,
+method = "ward.D2")
+```
+
+```{r}
+fviz_nbclust(res.wlm.md) 
+```
+
+According to the majority rule, the best number of clusters is  3 .
+
+
+```{r}
+res.wlm.md1 <- hclust(d = dist.man.200, method = "ward.D2")
+fviz_dend(res.wlm.md1, cex = 0.5)
+```
+Now, let’s check for the correlation between the cophenetic distance and the original one:
+
+```{r}
+res.coph2 <- cophenetic(res.wlm.md1)
+cor(dist.man.200, res.coph2) 
+```
+The value of 0.72 its close to the minimun of 0.75 but still isnt good enough. This means that this clustering method does not preserve the true original distances between units and the average linkage method is still with the best value in this case. But, onto the Ward's Method, using the Manhattan Distance seems to be more acurately.
+
+Now lets cut the hierarchical tree:
+
+
+```{r}
+d.wlm.md1 <- cutree(res.wlm.md1, k = 3)
+fviz_dend(res.wlm.md1, k = 3, cex = 0.5, k_colors = c("#00AFBB", "#E7B800", "#FC4E07"), color_labels_by_k = TRUE, rect = TRUE)
+```
+
+
+```{r}
+table(d.wlm.md1)
+```
+As we can see from the image and from table, this method suggest 3 clusters, but the first one contains only one observation, the second one 16 observations and the third contains 183 observations.
+
+Now lets visualize the results in the original space:
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=d.wlm.md1, col=c("#00AFBB", "#E7B800", "#FC4E07"),  main="Original space\n- Ward's Linkage Method and the Manhattan Distance, K=3"[d.wlm.md1])
+```
+Now lets visualize the scatter plott of the 3 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = d.wlm.md1), palette = c("#00AFBB", "#E7B800", "#FC4E07"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Ward's Linkage Method and the Manhattan Distance, K=3", cex.sub= 0.5)
+```
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster =  d.wlm.md1),geom="point",ellipse.type="convex",palette = c("#2E9FDF", "#FC4E07", "#CF3E4B"),repel = TRUE, show.clust.cent = FALSE)
+```
+
+
+
+The Ward's method using the Manhattan distance have a better cophenetic coefficient, but still doesnt bring us a good partioning of the clusters because we still have clusters with only one observation.
+
+
+### Single Linkage Method and Euclidean Distance
+
+Now we will use the single linkage method that it is a similarity measure between two clusters defined
+by shortest distance from any point in the 1st cluster to any point in the 2nd cluster.
+
+```{r}
+library(NbClust)
+res.slm.ed <- NbClust(vg_sales.scaled, distance = "euclidean", min.nc = 2, max.nc = 10,
+method = "single")
+```
+
+```{r}
+fviz_nbclust(res.slm.ed) 
+```
+According to the majority rule, the best number of clusters is  2.
+
+```{r}
+res.slm.ed1 <- hclust(d = dist.eucl.200, method = "single")
+fviz_dend(res.slm.ed1, cex = 0.5)
+```
+
+
+Now, let’s check for the correlation between the cophenetic distance and the original one:
+
+```{r}
+res.coph.sm.ed <- cophenetic(res.slm.ed1)
+cor(dist.eucl.200, res.coph.sm.ed) 
+```
+The value of 0.91 is a really good one this coefficient shows that the clustering solution reflects our data in a acurately way.
+
+
+Now lets cut the hierarchical tree:
+
+
+```{r}
+res.slm.ed2 <- cutree(res.slm.ed1, k = 2)
+fviz_dend(res.slm.ed1, k = 3, cex = 0.5, k_colors = c("#FC4E07", "#E7B800"), color_labels_by_k = TRUE, rect = TRUE)
+
+```
+
+
+```{r}
+
+table(res.slm.ed2)
+
+```
+As we can see, the data partitioning is not good in this case and almost all the observations are concentred in one single cluster.
+
+Now lets visualize the results in the original space:
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=res.slm.ed2, col=c("#00AFBB", "#E7B800"),  main="Original space\n- Single Linkage Method and the Euclidean Distance, K=2"[res.slm.ed2])
+```
+
+
+Now lets visualize the scatter plott of the 2 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = res.slm.ed2), palette = c("#00AFBB", "#E7B800"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Single Linkage Method and the Euclidean Distance, K=2", cex.sub= 0.5)
+```
+
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster = res.slm.ed2),geom="point",ellipse.type="convex",palette = c("#2E9FDF", "#FC4E07"),repel = TRUE, show.clust.cent = FALSE)
+```
+
+
+
+As we can see from this result, the single linkage method using euclidean distance and the average linked method suggest exactly the same partitioning in the observations.
+
+
+
+### Single Linkage Method and Manhattan Distance
+
+Now we will do the single linkage method using the manhattan distance:
+
+```{r message=FALSE, warning=FALSE}
+library(NbClust)
+slm.md <- NbClust(vg_sales.scaled, distance = "manhattan", min.nc = 2, max.nc = 10,
+method = "single")
+```
+
+```{r}
+fviz_nbclust(slm.md) 
+```
+
+According to the majority rule, the best number of clusters of this method is  2 .
+
+
+```{r}
+slm.md1 <- hclust(dist.man.200, method = "single")
+fviz_dend(slm.md1, cex = 0.5)
+```
+Looking at this dendogram is a little hard to visualize the partition of the clusters. So lets check the cophenetic results.
+
+```{r}
+slm.md2 <- hclust(dist.man.200, method = "single")
+cor(dist.man.200, cophenetic(slm.md2))
+```
+
+The correlation coefficient of 0.91 shows that this clustering solution reflects our data and its a good one to use.
+
+Now, to see the clusters more clearly, we have to cut the hierarchical tree:
+
+```{r}
+slm.md3 <- cutree(slm.md2, k = 2)
+fviz_dend(slm.md2, k = 2, cex = 0.5, k_colors = c("#00AFBB", "#E7B800"), color_labels_by_k = TRUE, rect = TRUE)
+
+```
+```{r}
+table(slm.md3)
+```
+As we can see in the dendogram and in the table, the clusterization puts only 1 observation in the first cluster one more time.
+
+Now lets visualize the original space:
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=slm.md3, col=c("#00AFBB", "#E7B800"),  main="Original space\n- Single Linkage Method and Manhattan Distance, K=2"[slm.md3])
+```
+
+Using the function fviz *cluster()*, we can also visualize the results in the scatter plot of the first 2 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = slm.md3), palette = c("#00AFBB", "#E7B800"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Single Linkage Method and Manhattan Distance, K=2", cex.sub= 0.5)
+```
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster = slm.md3),geom="point",ellipse.type="convex",palette = c("#2E9FDF", "#FC4E07"),repel = TRUE, show.clust.cent = FALSE)
+```
+
+
+
+The single linkage method using the both distances gave us the same results of the average linkage method.
+
+
+### Complete Linkage Method and Euclidean Distance
+
+The complete linkage method is a hierarchical classification method where the distance between two classes is defined as the greatest distance that could be obtained if we select one element from each class and measure the distance between these elements. In other words, it is the distance between the most distant elements from each class.
+
+So lets use first the complete linkage method with the euclidean distance
+
+```{r message=FALSE, warning=FALSE}
+library(NbClust)
+clm.ed <- NbClust(vg_sales.scaled, distance = "euclidean", min.nc = 2, max.nc = 10,
+method = "complete")
+```
+
+```{r}
+fviz_nbclust(clm.ed) 
+```
+
+According to the majority rule, the best number of clusters for this method is  2 .
+
+
+```{r}
+clm.ed1 <- hclust(dist.eucl.200, method = "complete")
+fviz_dend(clm.ed1, cex = 0.5)
+```
+
+Now lets check the correlation between the cophenetic distance and the original one:
+
+```{r}
+clm.ed2 <- hclust(dist.eucl.200, method = "complete")
+cor(dist.eucl.200, cophenetic(clm.ed2))
+```
+
+The correlation coefficient of 0.89 shows that this clustering solution reflects our data and its a good one to use.
+
+Now, if we want to see clusters, we have to cut the hierarchical tree and specify the number of clusters that we want:
+
+```{r}
+clm.ed3 <- cutree(clm.ed2, k = 2)
+fviz_dend(clm.ed2, k = 2, cex = 0.5, k_colors = c("#00AFBB", "#E7B800"), color_labels_by_k = TRUE, rect = TRUE)
+
+```
+```{r}
+table(clm.ed3)
+```
+As we can see in the dendogram and in the table, the clusterization puts only 1 observation in the first cluster, exactly the way the average linkage method and the single linkage method did.
+
+We can visualize these clustering results in the original space, via the matrix of pairwise scatterplots now:
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=clm.ed3, col=c("#00AFBB", "#E7B800"),  main="Original space\n- Complete Linkage Method and Euclidean Distance, K=2"[clm.ed3])
+```
+This original space is much alike the other ones and we see a lot of overlaping.
+
+
+Now lets visualize the results in the scatter plot of the first 2 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = clm.ed3), palette = c("#00AFBB", "#E7B800"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Complete Linkage Method and Euclidean Distance, K=2", cex.sub= 0.5)
+```
+
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster = clm.ed3),geom="point",ellipse.type="convex",palette = c("#2E9FDF", "#FC4E07"),repel = TRUE, show.clust.cent = FALSE)
+```
+
+
+The results of the complete linkage method using euclidean distance is the same as the average and single linkage method.
+
+
+### Complete Linkage Method and Manhattan Distance
+
+Now lets use the Manhattan distance to analyse the complete linkage Method:
+
+```{r message=FALSE, warning=FALSE}
+library(NbClust)
+clm.md <- NbClust(vg_sales.scaled, distance = "manhattan", min.nc = 2, max.nc = 10,
+method = "complete")
+```
+
+
+```{r}
+fviz_nbclust(clm.md) 
+```
+According to the majority rule, the best number of clusters is  2 .
+
+
+```{r}
+clm.md1 <- hclust(dist.man.200, method = "complete")
+fviz_dend(clm.md1, cex = 0.5)
+```
+
+Lets check the correlation between the cophenetic distance and the original one:
+
+```{r}
+clm.md2 <- hclust(dist.man.200, method = "complete")
+cor(dist.man.200, cophenetic(clm.md2))
+```
+
+The correlation coefficient shows that this clustering solution reflects our data and its a good one to use.
+
+Now, if we want to see clusters, we have to cut the hierarchical tree:
+
+```{r}
+clm.md3 <- cutree(clm.md2, k = 2)
+fviz_dend(clm.md2, k = 2, cex = 0.5, k_colors = c("#00AFBB", "#E7B800"), color_labels_by_k = TRUE, rect = TRUE)
+
+```
+```{r}
+table(clm.md3)
+```
+As we can see in the dendogram and in the table, the clusterization puts only 1 observation in the first cluster. 
+
+We can visualize these clustering results in the original space:
+
+```{r}
+pairs(vg_sales.scaled, gap=0, pch=clm.md3, col=c("#00AFBB", "#E7B800"),  main="Original space\n- Complete Linkage Method and Euclidean Distance, K=2"[clm.md3])
+```
+
+Now we can also visualize the results in the scatter plot of the first 2 PCs.
+
+```{r}
+fviz_cluster(list(data = vg_sales.scaled, cluster = clm.md3), palette = c("#00AFBB", "#E7B800"), ellipse.type = "convex", main="PCs space", repel = TRUE,
+show.clust.aver = FALSE, ggtheme = theme_minimal())+labs(
+subtitle = "Original space\n- Complete Linkage Method and Euclidean Distance, K=2", cex.sub= 0.5)
+```
+
+
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster = clm.md3),geom="point",ellipse.type="convex",palette = c("#2E9FDF", "#FC4E07"),repel = TRUE, show.clust.cent = FALSE)
+```
+As we can see, we had the same result of partitioning the datas in 2 clusters and put the number 1 on his own cluster.
+
+
+### Hierarchical clustering - Partial conclusion
+
+After trying these many methods and combine them with the type of distances, in first instance I would choose the combination of the Ward's Method with the Manhattan distance, even if he didnt get the minimun point of the cophenetic coefficient (0.75) but it gets really close with 0.72 and it was one of the few combinations which brought us more than only 2 clusters. Even if the 1st cluster of this method has one observation, it would be the one I would choose. 
+
+This one single cluster with only one observation (the number one in the rank itself) shows very clearly that he was an outlier and that all the methods so far were sensible to outliers.
+
+
+
+## Partitioning Clustering
+
+In the partitioning clustering, the number of clusters K is decided before to call the method. Once the number of clusters is specified, the data are split into clusters in such a way that the within-cluster dissimilarity is minimized.
+
+We will use 2 types of partitioning methods:
+
+> - K-Means: is a Clustering method that aims to partition *n* observations among *k* groups where each observation belongs to the group closest to the average. It is a method that is senstive to outliers.
+> - K-Medoids: is based on the medoids (which is a point that belongs to the data set) calculated by minimizing the absolute distance between the points and the selected centroid, instead of minimizing the square distance. Is also known as partitioning around medoids (PAM) and is less senstive to outliers when compared to the k-means.
+
+
+### K-Means
+
+#### Estimating the Optimal Number of Clusters
+
+The K-means clustering requires the users to specify the number of clusters K to be generated, so we will use the *Elbow Methods* to determine a good number of *K* to work on:
+
+```{r}
+library(factoextra)
+fviz_nbclust(vg_sales.scaled, kmeans, nstart = 25, method = "wss")+
+   geom_vline( xintercept = 5, linetype = 2)
+```
+
+The plot above represents WSS as a function of *K*. WSS decreases as K increases, but it can be seen a bend (or “elbow”) at K = 5. This bend indicates that additional clusters beyond the fifith have a little improvement in terms of WSS.
+
+So we will start the K-means methods by radomly selecting the centroids using the *set.seed()* function 
+
+```{r}
+set.seed(123)
+km.res <- kmeans(vg_sales.scaled, 5, nstart = 25)
+print(km.res)
+```
+
+We can see in the results above that we have with k-means 5 clusters of sizes 9, 50, 1, 125, 15, and it also indicates the position of the video game it respective cluster.
+
+Now lets compute the mean of each variable by cluster, using the original data, via the *aggregate()* function:
+
+```{r}
+aggregate(vg_sales.scaled, by=list(cluster = km.res$cluster), mean)
+```
+
+Based on this we can see that the third cluster contains higher values when compared to the other and the fourth cluster contains the smallest values.
+
+Now lets visualize it in the original space:
+
+```{r}
+cl.km <- km.res$cluster
+pairs(vg_sales.scaled, gap=0, pch=cl.km, col = c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233", "#E7B800")[cl.km])
+```
+
+
+Now lets visualize the k means cluster in a low dimensional space:
+
+```{r}
+fviz_cluster(km.res,
+             data = vg_sales.scaled,
+             palette = c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233", "#E7B800"),
+             ellipse.type = "euclid",
+             star.plot = TRUE,
+             repel = TRUE,
+             ggtheme = theme_minimal())
+```
+
+
+
+The issue with this method is that the final results obtained is sensitive to the initial random selection of cluster centers. Which means that for every different run of the algorithm on the same data set, you may choose a different set of initial centers. This may lead to different clustering results on different runs of the algorithm and also, as we can verify, the K-means is sensitive to outliers.
+
+And besides of that, we may choose the wrong *k* in the beginning of the analysis. 
+
+To try dicrease some of these issues, we can 2 two things:
+
+>- Compute the K-means for a different range of *K* valuews and compare their results.
+>- To avoid the distortions caused by outliers we can use the PAM algorithm, also knows as the K-medoids, that we will do in the next topic.
+
+I will do the method again with only one different *K* just to check:
+
+```{r}
+library(factoextra)
+fviz_nbclust(vg_sales.scaled, kmeans, nstart = 25, method = "wss")+
+   geom_vline( xintercept = 4, linetype = 2)
+```
+```{r}
+set.seed(123)
+km.res1 <- kmeans(vg_sales[,6:10], 4, nstart = 25)
+print(km.res1)
+```
+
+As we can check, now the clusters are 4 and it contains 16,48, 1 and 135 observations each.
+
+```{r}
+aggregate(vg_sales[,6:10], by=list(cluster = km.res1$cluster), mean)
+```
+
+With this result we see that the third cluster contains much higher values than the other ones.
+
+Now lets visualize the datas in the original space
+
+```{r}
+cl.km1 <- km.res1$cluster
+pairs(vg_sales.scaled, gap=0, pch=cl.km1, col = c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233")[cl.km1])
+```
+
+```{r}
+fviz_cluster(km.res1,
+             data = vg_sales.scaled,
+             palette = c("#2E9FDF", "#FC4E07", "#CF3E4B", "#287233"),
+             ellipse.type = "euclid",
+             star.plot = TRUE,
+             repel = TRUE,
+             ggtheme = theme_minimal())
+```
+
+
+
+The SS value of the first method with 5 clusters is 88% while the second with 4 is 84% which means that the first one with *k*=5 is better. 
+
+
+### K-medoids (PAM)
+
+#### Estimating the Optimal Number of Clusters
+
+The K-medoids algorithm requires the user to specify *K*, like in the k-means method. A good approach to determine the optimal number of clusters is the silhouette method.
+
+The silhouette value, for each unit, is a measure of how similar a unit is to its own cluster compared to other clusters.
+
+```{r}
+library(cluster)
+library(factoextra)
+fviz_nbclust(vg_sales.scaled, pam, method = "silhouette")+
+  theme_classic()
+
+```
+From the plot, the suggested number of clusters is K = 2.
+
+Now lets compute the PAM algorithm with *k=5* to see if can avoid the distortion caused by the outliers;
+
+```{r}
+pam.res <- pam(vg_sales.scaled, 2, metric = "euclidean", stand = FALSE)
+summary(pam.res)
+```
+
+The cluster medoids us matrix which rows are the medoids and columns are variables and the clustering vector is a vector of integers indicating the cluster to which each point is allocated.
+
+Now lets visualize the PAM clusters, first in the original space:
+
+
+
+```{r}
+pam.res1 <- pam.res$cluster
+pairs(vg_sales.scaled, gap=0, pch=pam.res1, col = c("#2E9FDF", "#FC4E07")[pam.res1])
+```
+```{r}
+fviz_cluster(pam.res,
+             data = vg_sales.scaled,
+             palette = c("#2E9FDF", "#FC4E07"),
+             ellipse.type = "euclid",
+             star.plot = TRUE,
+             repel = TRUE,
+             ggtheme = theme_minimal())
+```
+
+
+```{r}
+fviz_cluster(pam.res, geom = "point", frame.type = "norm")
+```
+
+This method seems like the best one to this type of dataframe cause it was the only one that really avoided the issued caused by the outliers and brought us 2 good clusters that have a good partitioning. The first cluster has 172 and the second one has 28.
+
+
+
+## Cluster Validation
+
+So far, we have applied several grouping methods, but we have not tested to see whether the dataset contains clusters or not and this may have been one of the reasons why the results were clearly not very satisfactory. 
+
+We can evaluate whether there are clusters from both a statistical and a graphical point of view, using Hopkins statistics and the VAT algorithm, respectively.
+
+
+### Hopkins Statistic
+
+The Hopkins Statistic a way of measuring the cluster tendency of a data set.  It acts as a statistical hypothesis test where the null hypothesis is that the data is generated by a Poisson point process and are thus uniformly randomly distributed.A value close to 1 tends to indicate the data is highly clustered, random data will tend to result in values around 0.5, and uniformly distributed data will tend to result in values close to 0.
+
+```{r}
+library(clustertend)
+hopkins(vg_sales.scaled, n = nrow(vg_sales.scaled)-1)
+
+```
+The result close to 0 and it suggests that there are no clusters because the data its uniformly distributed.
+
+
+
+
+### Internal clustering validation measures
+
+Internal validation measures reflect often the compactness, the connectedness and separation of the cluster partitions.
+
+
+
+#### Silhouete Analysis
+
+We described before what the silhouete analysis is to find out the good number of *k* to use in the PAM method. The Silhouette analysis measures how well an observation is clustered and it estimates the average distance between clusters. So we will calculate for each method that we used:
+
+
+##### Silhouette analysis for average linkage method 
+
+```{r}
+s.res.alm <- eclust(vg_sales.scaled, "hclust", k = 2,
+                method = "average", graph = FALSE)
+silinfo <- s.res.alm$silinfo
+silinfo$avg.width
+
+```
+
+
+```{r}
+fviz_silhouette(s.res.alm)
+```
+
+```{r}
+silinfo$clus.avg.widths
+```
+
+It can be seen that the sample have a negative silhouette coefficient in the hierarchical clustering. This means that they are not in the right cluster.
+
+We can find the name of these samples and determine the clusters they are closer (neighbor cluster), as follow:
+
+```{r}
+sil <- s.res.alm$silinfo$widths[, 1:3]
+neg_sil_index<- which(sil[,'sil_width'] < 0)
+sil[neg_sil_index, , drop = FALSE]
+
+```
+
+
+
+
+##### Silhouette analysis for ward's linkage method 
+
+
+```{r}
+s.res.wlm <- eclust(vg_sales.scaled, "hclust", k = 3,
+                method = "ward", graph = FALSE)
+silinfo1 <- s.res.wlm$silinfo
+silinfo1$avg.width
+```
+```{r}
+fviz_silhouette(s.res.wlm)
+```
+```{r}
+silinfo1$clus.avg.widths
+```
+
+Now lets find the name of these samples that are not in the right cluster and determine the clusters they are closer, as follow:
+
+
+```{r}
+sil1 <- s.res.wlm$silinfo$widths[, 1:3]
+neg_sil_index1<- which(sil1[,'sil_width'] < 0)
+sil1[neg_sil_index1, , drop = FALSE]
+```
+
+
+
+##### Silhouette analysis for single linkage method
+
+```{r}
+s.res.slm <- eclust(vg_sales.scaled, "hclust", k = 2,
+                method = "single", graph = FALSE)
+silinfo2 <- s.res.slm$silinfo
+silinfo2$avg.width
+```
+```{r}
+fviz_silhouette(s.res.slm)
+```
+```{r}
+silinfo2$clus.avg.widths
+```
+
+Now lets find the name of these samples that are not in the right cluster and determine the clusters they are closer, as follow:
+
+```{r}
+sil2 <- s.res.slm$silinfo$widths[, 1:3]
+neg_sil_index2 <- which(sil2[,'sil_width'] < 0)
+sil2[neg_sil_index2, , drop = FALSE]
+```
+
+
+##### Silhouette analysis for complete linkage method
+
+```{r}
+s.res.clm <- eclust(vg_sales.scaled, "hclust", k = 2,
+                method = "complete", graph = FALSE)
+silinfo3 <- s.res.clm$silinfo
+silinfo3$avg.width
+```
+```{r}
+fviz_silhouette(s.res.clm)
+```
+
+```{r}
+silinfo3$clus.avg.widths
+```
+Now lets find the name of these samples that are not in the right cluster and determine the clusters they are closer, as follow:
+
+```{r}
+sil3 <- s.res.clm$silinfo$widths[, 1:3]
+neg_sil_index3<- which(sil3[,'sil_width'] < 0)
+sil3[neg_sil_index3, , drop = FALSE]
+```
+
+
+
+##### Silhouette analysis for k-means
+
+```{r}
+s.res.km <- eclust(vg_sales.scaled, "hclust", k = 5,
+                method = "kmeans", graph = FALSE)
+silinfo4 <- s.res.km$silinfo
+silinfo4$avg.width
+```
+```{r}
+fviz_silhouette(s.res.km)
+```
+```{r}
+silinfo4$clus.avg.widths
+```
+
+Now lets find the name of these samples that are not in the right cluster and determine the clusters they are closer, as follow:
+
+```{r}
+sil4 <- s.res.km$silinfo$widths[, 1:3]
+neg_sil_index4<- which(sil4[,'sil_width'] < 0)
+sil4[neg_sil_index4, , drop = FALSE]
+```
+
+
+
+##### Silhouette analysis for k-medoids (PAM)
+
+```{r}
+s.res.pam <- eclust(vg_sales.scaled, "hclust", k = 2,
+                method = "pam", graph = FALSE)
+silinfo5 <- s.res.pam$silinfo
+silinfo5$avg.width
+
+```
+```{r}
+fviz_silhouette(s.res.pam)
+```
+```{r}
+silinfo5 <- s.res.pam$silinfo
+silinfo5$avg.width
+```
+Now lets find the name of these samples that are not in the right cluster and determine the clusters they are closer, as follow:
+
+```{r}
+sil5 <- s.res.pam$silinfo$widths[, 1:3]
+neg_sil_index5<- which(sil5[,'sil_width'] < 0)
+sil5[neg_sil_index5, , drop = FALSE]
+
+```
+
+Almost all of the methods have the average silhouette width close to 0.6 what is closer to 1. That means that the observations are very well clustered. The Sihouette Analysis for the K-means have the average width 0.29, which is closer to 0, what means that the observations lies between two clusters.
+
+All the methods have observations with negative width, which means that these observations are probably placed in the wrong cluster. 
+
+
+
+#### Dunn Index
+
+Dunn index is a metric for evaluating clustering algorithms. Like all other indexes, the objective is to identify sets of clusters that are compact, with little variation between the members of the cluster, and well separated, where the averages of the different clusters are sufficiently distant, compared to the internal cluster. For a certain cluster assignment, a higher Dunn index indicates better grouping.
+
+##### Dunn analysis for average linkage method 
+```{r}
+library(fpc)
+di <- cluster.stats(dist(vg_sales.scaled), s.res.alm$cluster)
+di$dunn
+
+```
+
+##### Dunn analysis for ward's linkage method 
+```{r}
+di1 <- cluster.stats(dist(vg_sales.scaled), s.res.wlm$cluster)
+di1$dunn
+```
+##### Dunn analysis for single linkage method
+```{r}
+di2 <- cluster.stats(dist(vg_sales.scaled), s.res.slm$cluster)
+di2$dunn
+```
+
+##### Dunn analysis for complete linkage method
+
+```{r}
+di3 <- cluster.stats(dist(vg_sales.scaled), s.res.clm$cluster)
+di3$dunn
+```
+
+##### Dunn analysis for k-means
+
+```{r}
+di4 <- cluster.stats(dist(vg_sales.scaled), s.res.km$cluster)
+di4$dunn
+```
+
+##### Dunn analysis for k-medoids (PAM)
+
+```{r}
+di5 <- cluster.stats(dist(vg_sales.scaled), s.res.pam$cluster)
+di5$dunn
+```
+
+According to the Dunn index, all the units are not clustered well enough because all the index are very low.
+
+
+
+### External Validation measures
+
+The aim of the external validation measures is to compare the identified clusters to a reference. In this case we will use the categorical variable from our dataset *Genre*.
+
+
+##### External analysis for average linkage method 
+
+```{r}
+table(vg_sales$Genre, s.res.alm$cluster)
+```
+
+According to the Confusion matrix, the number of clusters is not equal to the to categorical values. The number of clusters is 2 and the categorical variables are 12.
+
+Now lets check the correct rand index:
+
+```{r}
+genre <- as.numeric(vg_sales$Genre)
+extern <- cluster.stats(d = dist(vg_sales), genre, s.res.alm$cluster)
+extern$corrected.rand
+
+```
+
+
+
+
+
+##### External analysis for ward's linkage method 
+
+
+```{r}
+table(vg_sales$Genre, s.res.wlm$cluster)
+```
+
+According to the Confusion matrix, the number of clusters is not equal to the to categorical values. The number of clusters is 3 and the categorical variables are 12.
+
+Now lets check the correct rand index:
+
+```{r}
+
+extern1 <- cluster.stats(d = dist(vg_sales), genre, s.res.wlm$cluster)
+extern1$corrected.rand
+
+```
+
+
+
+
+##### External analysis for single linkage method
+
+
+```{r}
+table(vg_sales$Genre, s.res.slm$cluster)
+```
+
+According to the Confusion matrix, the number of clusters is not equal to the to categorical values. The number of clusters is 2 and the categorical variables are 12.
+
+Now lets check the correct rand index:
+
+```{r}
+extern2 <- cluster.stats(d = dist(vg_sales), genre, s.res.slm$cluster)
+extern2$corrected.rand
+
+```
+
+
+
+##### External analysis for complete linkage method
+
+```{r}
+table(vg_sales$Genre, s.res.clm$cluster)
+```
+
+According to the Confusion matrix, the number of clusters is not equal to the to categorical values. The number of clusters is 2 and the categorical variables are 12.
+
+Now lets check the correct rand index:
+
+```{r}
+extern3 <- cluster.stats(d = dist(vg_sales), genre, s.res.clm$cluster)
+extern3$corrected.rand
+
+```
+
+
+
+##### External analysis for k-means
+
+```{r}
+table(vg_sales$Genre, s.res.km$cluster)
+```
+
+According to the Confusion matrix, the number of clusters is not equal to the to categorical values. The number of clusters is 5 and the categorical variables are 12.
+
+Now lets check the correct rand index:
+
+```{r}
+
+extern4 <- cluster.stats(d = dist(vg_sales), genre, s.res.km$cluster)
+extern4$corrected.rand
+
+```
+
+
+
+
+##### External analysis for k-medoids (PAM)
+
+```{r}
+table(vg_sales$Genre, s.res.pam$cluster)
+```
+According to the Confusion matrix, the number of clusters is not equal to the to categorical values. The number of clusters is 2 and the categorical variables are 12.
+
+Now lets check the correct rand index:
+
+```{r}
+extern5 <- cluster.stats(d = dist(vg_sales), genre, s.res.pam$cluster)
+extern5$corrected.rand
+
+```
+
+
+
+The corrected Rand index provides a measure for assessing the similarity between two partitions, adjusted for chance. Its range is -1 (no agreement) to 1 (perfect agreement). Agreement between the genres and the cluster solution are very close to zero which means that there is no agreement between the numerical value and the cluster solution method.
+
+
+
+
+
+## Choosing the best Clustering Algorithm
+
+To choose the best pair of clustering algorithm and optimal number of clusters, we will use internal measures and stability ones.
+
+
+### Internal Measures
+
+
+```{r}
+library(clValid)
+clmethods <- c ("hierarchical", "kmeans", "pam")
+intern_vg.eucl<-clValid(vg_sales.scaled, nClust=2:5, clMethods= clmethods, metric="euclidean", validation="internal")
+summary(intern_vg.eucl)
+```
+
+According to this method, the best clustering method using the euclidean distance is:
+> - According to the connectivity, that must be minimized, the best solution would be the hierchical.
+> - According to the Dunn value that must be maximized, the best solution is the hierachical.
+> - According the silhouette, that also must be maximized, the best solution is the hierachical as well.
+
+So, we can say that the best clustering method based on the internal measures and using euclidean distance is the hierarchical with 2 clusters.
+
+
+Now lets try using the manhattan distance:
+
+```{r}
+clmethods1 <- c ("hierarchical", "kmeans", "pam")
+intern_vg.man<-clValid(vg_sales.scaled, nClust=2:5, clMethods= clmethods, metric="manhattan", validation="internal")
+summary(intern_vg.eucl)
+```
+
+
+According to this method, the best clustering method using the manhattan distance is:
+
+> - According to the connectivity, that must be minimized, the best solution would be the hierchical.
+> - According to the Dunn value that must be maximized, the best solution is the hierachical.
+> - According the silhouette, that also must be maximized, the best solution is the hierachical as well.
+
+So, we can say that the best clustering method based on the internal measures and using manhattan distance is the hierarchical with 2 clusters, exactly the same thing as using the euclidean distance
+
+
+
+### Stability Measures
+
+```{r}
+clmethods2 <- c("hierarchical","kmeans","pam")
+
+stab <- clValid(vg_sales.scaled, nClust = 2:5, clMethods = clmethods, validation = "stability")
+
+optimalScores(stab)
+```
+
+With this measure, according with APN and ADM, the best clustering method is the hierarchical with 2 clusters, according the ADM, the best clustering method is PAM with 5 clusters and according to FOM the best clustering method is kmeans with 5 clusters. 
+
+
+
+### The Best Clustering Method
+
+According to these approaches, it becomes clear that the best combination of method and number of clusters is the hierarchical one with 2 clusters. I could choose any linkage method in this case (except the wards one) because it all lead the same clustering result.
+
+```{r}
+fviz_cluster(list(data=vg_sales.scaled, cluster =  d.alm),geom="point",ellipse.type="convex",palette = c("#00AFBB", "#E7B800"),repel = TRUE, show.clust.cent = FALSE)
+
+```
+
+
+But I still believe that the PAM method was the only one that really avoided the issue caused by the outliers and brought an acceptable partitioning using the optimal number of clusters that is 2 as we can see in the graph below:
+
+```{r}
+fviz_cluster(pam.res, geom = "point", frame.type = "norm")
+```
+
+
+
+
+
