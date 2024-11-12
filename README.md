@@ -61,7 +61,7 @@ vg_sales <- read_excel("vg_sales.xlt",
 
 # Inspect the structure of the dataset
 str(vg_sales)
-```r
+```
 
 ## Usage
 
